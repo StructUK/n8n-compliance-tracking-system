@@ -1,0 +1,89 @@
+{
+  "name": "Compliance Tracking System",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "days", "triggerAtHour": 8 }] }
+      },
+      "id": "schedule-check-compliance",
+      "name": "Check Compliance",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-1200, 0]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": { "__rl": true, "mode": "list", "value": "" },
+        "sheetName": { "__rl": true, "mode": "list", "value": "Properties" },
+        "options": {}
+      },
+      "id": "sheets-read-properties",
+      "name": "Read Properties",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [-960, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const today = new Date();\ntoday.setHours(0,0,0,0);\nconst CERTS = [\n  { key: 'gas_safety', label: 'Gas Safety' },\n  { key: 'eicr', label: 'EICR' },\n  { key: 'epc', label: 'EPC' }\n];\n\nfunction daysUntil(dateStr) {\n  const d = new Date(dateStr);\n  d.setHours(0,0,0,0);\n  return Math.round((d.getTime() - today.getTime()) / 86400000);\n}\n\nfunction applicableThreshold(daysLeft) {\n  if (daysLeft > 60) return null;\n  if (daysLeft <= 7) return 7;\n  if (daysLeft <= 30) return 30;\n  return 60;\n}\n\nconst out = [];\nfor (const item of $input.all()) {\n  const row = item.json;\n  const update = { row_number: row.row_number, property_ref: row.property_ref };\n  const alerts = [];\n\n  for (const cert of CERTS) {\n    const expiry = row[`${cert.key}_expiry`];\n    const daysLeft = daysUntil(expiry);\n    const status = daysLeft < 0 ? 'overdue' : (daysLeft <= 60 ? 'due_soon' : 'valid');\n    const threshold = applicableThreshold(daysLeft);\n    const lastAlertRaw = row[`${cert.key}_last_alert_days`];\n    const lastAlert = (lastAlertRaw === '' || lastAlertRaw === undefined || lastAlertRaw === null) ? null : Number(lastAlertRaw);\n\n    let newLastAlert = lastAlert;\n    if (threshold !== null && (lastAlert === null || threshold < lastAlert)) {\n      alerts.push({\n        property_ref: row.property_ref,\n        address: row.address,\n        landlord_name: row.landlord_name,\n        certificate: cert.label,\n        expiry_date: expiry,\n        days_left: daysLeft,\n        threshold,\n        status\n      });\n      newLastAlert = threshold;\n    }\n\n    update[`${cert.key}_status`] = status;\n    update[`${cert.key}_last_alert_days`] = newLastAlert === null ? '' : newLastAlert;\n  }\n\n  update._alerts = alerts;\n  out.push({ json: update });\n}\nreturn out;"
+      },
+      "id": "code-evaluate-compliance",
+      "name": "Evaluate Compliance",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-720, 0]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": { "__rl": true, "mode": "list", "value": "" },
+        "sheetName": { "__rl": true, "mode": "list", "value": "Properties" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": ["row_number"],
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "gas_safety_status": "={{ $json.gas_safety_status }}",
+            "gas_safety_last_alert_days": "={{ $json.gas_safety_last_alert_days }}",
+            "eicr_status": "={{ $json.eicr_status }}",
+            "eicr_last_alert_days": "={{ $json.eicr_last_alert_days }}",
+            "epc_status": "={{ $json.epc_status }}",
+            "epc_last_alert_days": "={{ $json.epc_last_alert_days }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "sheets-update-statuses",
+      "name": "Update Statuses",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [-480, -120]
+    }
+  ],
+  "connections": {
+    "Check Compliance": {
+      "main": [
+        [
+          { "node": "Read Properties", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Read Properties": {
+      "main": [
+        [
+          { "node": "Evaluate Compliance", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Evaluate Compliance": {
+      "main": [
+        [
+          { "node": "Update Statuses", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": { "executionOrder": "v1" }
+}
