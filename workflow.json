@@ -3,26 +3,48 @@
   "nodes": [
     {
       "parameters": {
-        "rule": { "interval": [{ "field": "days", "triggerAtHour": 8 }] }
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 8
+            }
+          ]
+        }
       },
       "id": "schedule-check-compliance",
       "name": "Check Compliance",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [-1200, 0]
+      "position": [
+        -1200,
+        0
+      ]
     },
     {
       "parameters": {
         "operation": "read",
-        "documentId": { "__rl": true, "mode": "list", "value": "" },
-        "sheetName": { "__rl": true, "mode": "list", "value": "Properties" },
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1A5ciFeh3I33MMjgju437oW3Dql-5goL9DNjGntWTE7s",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1A5ciFeh3I33MMjgju437oW3Dql-5goL9DNjGntWTE7s/edit"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Properties"
+        },
         "options": {}
       },
       "id": "sheets-read-properties",
       "name": "Read Properties",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [-960, 0]
+      "position": [
+        -960,
+        0
+      ]
     },
     {
       "parameters": {
@@ -32,16 +54,30 @@
       "name": "Evaluate Compliance",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-720, 0]
+      "position": [
+        -720,
+        0
+      ]
     },
     {
       "parameters": {
         "operation": "update",
-        "documentId": { "__rl": true, "mode": "list", "value": "" },
-        "sheetName": { "__rl": true, "mode": "list", "value": "Properties" },
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1A5ciFeh3I33MMjgju437oW3Dql-5goL9DNjGntWTE7s",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1A5ciFeh3I33MMjgju437oW3Dql-5goL9DNjGntWTE7s/edit"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Properties"
+        },
         "columns": {
           "mappingMode": "defineBelow",
-          "matchingColumns": ["row_number"],
+          "matchingColumns": [
+            "row_number"
+          ],
           "value": {
             "row_number": "={{ $json.row_number }}",
             "gas_safety_status": "={{ $json.gas_safety_status }}",
@@ -58,7 +94,10 @@
       "name": "Update Statuses",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [-480, -120]
+      "position": [
+        -480,
+        -120
+      ]
     },
     {
       "parameters": {
@@ -68,15 +107,28 @@
       "name": "Extract Alerts",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-480, 120]
+      "position": [
+        -480,
+        120
+      ]
     },
     {
       "parameters": {
         "options": {},
         "assignments": {
           "assignments": [
-            { "id": "compliance-owner-email", "name": "compliance_owner_email", "type": "string", "value": "compliance-demo@example.com" },
-            { "id": "compliance-slack-channel", "name": "slack_channel", "type": "string", "value": "#compliance-demo" }
+            {
+              "id": "compliance-owner-email",
+              "name": "compliance_owner_email",
+              "type": "string",
+              "value": "compliance-demo@example.com"
+            },
+            {
+              "id": "compliance-slack-channel",
+              "name": "slack_channel",
+              "type": "string",
+              "value": "#compliance-demo"
+            }
           ]
         }
       },
@@ -84,7 +136,10 @@
       "name": "Alert Config",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [-240, 120]
+      "position": [
+        -240,
+        120
+      ]
     },
     {
       "parameters": {
@@ -92,68 +147,108 @@
         "toEmail": "={{ $json.compliance_owner_email }}",
         "subject": "=Compliance alert: {{ $json.certificate }} for {{ $json.property_ref }} ({{ $json.days_left < 0 ? 'OVERDUE' : $json.days_left + ' days left' }})",
         "emailFormat": "text",
-        "text": "=Certificate: {{ $json.certificate }}\nProperty: {{ $json.property_ref }} — {{ $json.address }}\nLandlord: {{ $json.landlord_name }}\nExpiry date: {{ $json.expiry_date }}\nDays left: {{ $json.days_left }}\nStatus: {{ $json.status }}",
+        "text": "=Certificate: {{ $json.certificate }}\nProperty: {{ $json.property_ref }} \u2014 {{ $json.address }}\nLandlord: {{ $json.landlord_name }}\nExpiry date: {{ $json.expiry_date }}\nDays left: {{ $json.days_left }}\nStatus: {{ $json.status }}",
         "options": {}
       },
       "id": "email-notify-compliance-owner",
       "name": "Notify Compliance Owner (Email)",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
-      "position": [0, 40]
+      "position": [
+        0,
+        40
+      ]
     },
     {
       "parameters": {
         "select": "channel",
-        "channelId": { "__rl": true, "mode": "name", "value": "={{ $json.slack_channel }}" },
-        "text": "=:warning: *Compliance alert* — {{ $json.certificate }} for `{{ $json.property_ref }}`\n{{ $json.address }} (landlord: {{ $json.landlord_name }})\nExpiry: {{ $json.expiry_date }} ({{ $json.days_left }} days) — status: *{{ $json.status }}*",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $json.slack_channel }}"
+        },
+        "text": "=:warning: *Compliance alert* \u2014 {{ $json.certificate }} for `{{ $json.property_ref }}`\n{{ $json.address }} (landlord: {{ $json.landlord_name }})\nExpiry: {{ $json.expiry_date }} ({{ $json.days_left }} days) \u2014 status: *{{ $json.status }}*",
         "otherOptions": {}
       },
       "id": "slack-notify-compliance-owner",
       "name": "Notify Compliance Owner (Slack)",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.2,
-      "position": [0, 200]
+      "position": [
+        0,
+        200
+      ]
     }
   ],
   "connections": {
     "Check Compliance": {
       "main": [
         [
-          { "node": "Read Properties", "type": "main", "index": 0 }
+          {
+            "node": "Read Properties",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Read Properties": {
       "main": [
         [
-          { "node": "Evaluate Compliance", "type": "main", "index": 0 }
+          {
+            "node": "Evaluate Compliance",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Evaluate Compliance": {
       "main": [
         [
-          { "node": "Update Statuses", "type": "main", "index": 0 },
-          { "node": "Extract Alerts", "type": "main", "index": 0 }
+          {
+            "node": "Update Statuses",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract Alerts",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Extract Alerts": {
       "main": [
         [
-          { "node": "Alert Config", "type": "main", "index": 0 }
+          {
+            "node": "Alert Config",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Alert Config": {
       "main": [
         [
-          { "node": "Notify Compliance Owner (Email)", "type": "main", "index": 0 },
-          { "node": "Notify Compliance Owner (Slack)", "type": "main", "index": 0 }
+          {
+            "node": "Notify Compliance Owner (Email)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Compliance Owner (Slack)",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     }
   },
   "pinData": {},
-  "settings": { "executionOrder": "v1" }
+  "settings": {
+    "executionOrder": "v1"
+  }
 }
