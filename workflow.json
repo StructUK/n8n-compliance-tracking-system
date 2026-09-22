@@ -59,6 +59,60 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [-480, -120]
+    },
+    {
+      "parameters": {
+        "jsCode": "const out = [];\nfor (const item of $input.all()) {\n  for (const alert of item.json._alerts || []) {\n    out.push({ json: alert });\n  }\n}\nreturn out;"
+      },
+      "id": "code-extract-alerts",
+      "name": "Extract Alerts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-480, 120]
+    },
+    {
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            { "id": "compliance-owner-email", "name": "compliance_owner_email", "type": "string", "value": "compliance-demo@example.com" },
+            { "id": "compliance-slack-channel", "name": "slack_channel", "type": "string", "value": "#compliance-demo" }
+          ]
+        }
+      },
+      "id": "set-alert-config",
+      "name": "Alert Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-240, 120]
+    },
+    {
+      "parameters": {
+        "fromEmail": "notifications@struct.solutions",
+        "toEmail": "={{ $json.compliance_owner_email }}",
+        "subject": "=Compliance alert: {{ $json.certificate }} for {{ $json.property_ref }} ({{ $json.days_left < 0 ? 'OVERDUE' : $json.days_left + ' days left' }})",
+        "emailFormat": "text",
+        "text": "=Certificate: {{ $json.certificate }}\nProperty: {{ $json.property_ref }} — {{ $json.address }}\nLandlord: {{ $json.landlord_name }}\nExpiry date: {{ $json.expiry_date }}\nDays left: {{ $json.days_left }}\nStatus: {{ $json.status }}",
+        "options": {}
+      },
+      "id": "email-notify-compliance-owner",
+      "name": "Notify Compliance Owner (Email)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [0, 40]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": { "__rl": true, "mode": "name", "value": "={{ $json.slack_channel }}" },
+        "text": "=:warning: *Compliance alert* — {{ $json.certificate }} for `{{ $json.property_ref }}`\n{{ $json.address }} (landlord: {{ $json.landlord_name }})\nExpiry: {{ $json.expiry_date }} ({{ $json.days_left }} days) — status: *{{ $json.status }}*",
+        "otherOptions": {}
+      },
+      "id": "slack-notify-compliance-owner",
+      "name": "Notify Compliance Owner (Slack)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [0, 200]
     }
   ],
   "connections": {
@@ -79,7 +133,23 @@
     "Evaluate Compliance": {
       "main": [
         [
-          { "node": "Update Statuses", "type": "main", "index": 0 }
+          { "node": "Update Statuses", "type": "main", "index": 0 },
+          { "node": "Extract Alerts", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Extract Alerts": {
+      "main": [
+        [
+          { "node": "Alert Config", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Alert Config": {
+      "main": [
+        [
+          { "node": "Notify Compliance Owner (Email)", "type": "main", "index": 0 },
+          { "node": "Notify Compliance Owner (Slack)", "type": "main", "index": 0 }
         ]
       ]
     }
